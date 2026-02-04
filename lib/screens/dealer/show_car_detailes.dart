@@ -17,6 +17,7 @@ import '../../models/car_info_model.dart';
 import '../../providers/Dealer/cars_provider/cars_provider.dart';
 import '../Widgets/custom_app_bar.dart';
 import '../Widgets/custom_error_widget.dart';
+import '../Widgets/custom_no_data.dart';
 import '../Widgets/custom_small_text.dart';
 import '../Widgets/my_list_tile.dart';
 import '../Widgets/show_car_detailes/comments.dart';
@@ -35,7 +36,7 @@ class _ShowCarDetailsState extends State<ShowCarDetails>
 
   late List<CarInfoModel> _carSpec;
 
-  List<String>? images = [];
+  List<String> images = [];
   bool isImagesLoaded = false;
 
   bool isOfferScreen = false;
@@ -47,11 +48,18 @@ class _ShowCarDetailsState extends State<ShowCarDetails>
   bool _isFetched = false;
 
   @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     if (!_isFetched) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+      final args = ModalRoute.of(context)?.settings.arguments as Map;
 
       if (args != null) {
         isOfferScreen = args['isOfferScreen'] ?? false;
@@ -145,10 +153,10 @@ class _ShowCarDetailsState extends State<ShowCarDetails>
         if (!isImagesLoaded) {
           if (carData.coverImage != null &&
               carData.coverImage!.isNotEmpty) {
-            images!.insert(0, carData.coverImage!);
+            images.insert(0, carData.coverImage!);
           }
           if (carData.images != null) {
-            images!.addAll(carData.images!);
+            images.addAll(carData.images!);
           }
           isImagesLoaded = true;
         }
@@ -212,9 +220,17 @@ class _ShowCarDetailsState extends State<ShowCarDetails>
                         stock: '${carData.quantityInStock}',
                         context: context,
                       ),
-                      isOfferScreen
-                          ? const SizedBox.shrink()
-                          : CommentWidget(carModel: carData),
+                      if (!isOfferScreen)
+                        carData.reviews == null || carData.reviews!.isEmpty
+                            ? const CustomNoData(
+                          iconSize: 250,
+                          text: 'No comments available',
+                          subtitle: 'This car has not received any reviews yet.',
+                          showActionButton: true,
+                          icon: "rating.json",
+                        )
+                            : CommentWidget(carModel: carData),
+
                     ],
                   ),
                 ),
@@ -277,7 +293,7 @@ class _ShowCarDetailsState extends State<ShowCarDetails>
         crossAxisSpacing: 16.w,
         childAspectRatio: 200 / 120,
       ),
-      itemCount: 4,
+      itemCount: carSpec.length,
       itemBuilder: (context, index) {
         return CustomContainer(
           preTileIcon: carSpec[index].icon,

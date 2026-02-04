@@ -17,7 +17,6 @@ import '../../../core/utils/constants.dart';
 import '../../../core/utils/sort.dart';
 import '../../../providers/Dealer/cars_provider/cars_provider.dart';
 import '../../Widgets/custom_error_widget.dart';
-import '../../Widgets/custom_no_data.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -29,154 +28,143 @@ class SalesScreen extends StatefulWidget {
 class _SalesScreenState extends State<SalesScreen>
     with ImageHelper, CurrencyHelper, ShimmerHelper {
   int selectedOrder = 0;
-  late TextEditingController searchController;
+  bool _isFetched = false;
 
   @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!_isFetched) {
       context.read<CarsProvider>().fetchAllSoldCars();
-    });    searchController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    searchController.dispose();
+      _isFetched = true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SafeArea(
-      child: ListView(
-        children: [
-          ///CustomSearchBar
-          //   CustomSearchBar(searchController: searchController,),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 16.h),
-            child: Column(
+      body: SafeArea(
+        child: Consumer<CarsProvider>(
+          builder: (context, provider, _) {
+            final response = provider.allSoldCars;
+
+            return ListView(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
               children: [
-                ///SalesBar
-                CustomAppBar(text: "Sales"),
+                const CustomAppBar(text: "Sales"),
                 _salesBar,
 
-                ///Sales cars
-                carSalesList
+                /// 🔄 Loading
+                if (response.status == ApiStatus.LOADING)
+                  const ShimmerSoldCarsScreen(),
+
+                /// ❌ Error
+                if (response.status == ApiStatus.ERROR)
+                  CustomErrorWidget(
+                    isInternetConnection:
+                    response.message == OFFLINE_FAILURE_MESSAGE,
+                    text: response.message ?? 'Failed to load sales',
+                    onTap: () => provider.fetchAllSoldCars(),
+                  ),
+
+                /// ✅ Completed
+                if (response.status == ApiStatus.COMPLETED)
+                  _buildSalesList(response.data),
               ],
-            ),
-          ),
-
-          //_salesCars,
-        ],
-      ),
-    ));
-  }
-
-  Row get _salesBar {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        DropdownButton(
-          value: selectedOrder,
-          borderRadius: BorderRadius.circular(5.r),
-          dropdownColor: Theme.of(context).hintColor,
-          menuWidth: MediaQuery.of(context).size.width / 2 - 25,
-          style: TextStyle(fontSize: 14.sp, color: kWhite),
-          items: const [
-            DropdownMenuItem(
-              value: 0, //الاحدث
-              child: Text('Latest to Newest '),
-            ),
-            DropdownMenuItem(
-              value: 1, //الاقدم
-              child: Text("Newest to Latest"),
-            )
-          ],
-          onChanged: (value) => setState(() => selectedOrder = value!),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 
-  Widget get carSalesList {
-    return Consumer<CarsProvider>(
-        builder: (BuildContext context, CarsProvider allCarsPr, Widget? child) {
-      print('Status: ${allCarsPr.allSoldCars.status}');
-      if (allCarsPr.allSoldCars.status == ApiStatus.LOADING) {
-        return ShimmerSoldCarsScreen();
-      } else if (allCarsPr.allSoldCars.status == ApiStatus.COMPLETED) {
-        // فرز القائمة حسب تاريخ الإنشاء
+  /// 🔽 Sorting Bar
+  Widget get _salesBar {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: DropdownButton<int>(
+        value: selectedOrder,
+        borderRadius: BorderRadius.circular(8.r),
+        dropdownColor: Theme.of(context).hintColor,
+        style: TextStyle(fontSize: 14.sp, color: kWhite),
+        items: const [
+          DropdownMenuItem(
+            value: 0,
+            child: Text('Latest first'),
+          ),
+          DropdownMenuItem(
+            value: 1,
+            child: Text("Oldest first"),
+          )
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() => selectedOrder = value);
+        },
+      ),
+    );
+  }
 
-        if (allCarsPr.allSoldCars.data!.isEmpty) {
-          return CustomNotFound(
-            image: 'assets/images/linearchart.json',
-            width: 450,
-            text: 'No Sales Yet!',
-          );
+  /// 🧾 Sales List
+  Widget _buildSalesList(List<SoldCarModel>? sales) {
+    if (sales == null || sales.isEmpty) {
+      return const CustomNotFound(
+        image: 'assets/images/linearchart.json',
+        width: 450,
+        text: 'No sales yet.',
+      );
+    }
+
+    /// 🔥 Sorting ONCE (not inside itemBuilder)
+    for (final sold in sales) {
+      if (sold.cars != null) {
+        sortByCreatedAt(
+          sold.cars!,
+              (car) => car.createdAt!,
+          selectedOrder == 0,
+        );
+      }
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: sales.length,
+      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+      itemBuilder: (context, index) {
+        final sold = sales[index];
+
+        if (sold.cars == null || sold.cars!.isEmpty) {
+          return const SizedBox.shrink();
         }
 
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const BouncingScrollPhysics(),
+        return Column(
+          children: sold.cars!.map((car) {
+            if (car.id == null) return const SizedBox.shrink();
 
-          itemBuilder: (context, index) {
-            SoldCarModel sold = allCarsPr.allSoldCars.data![index];
-            List<SoldCarModel>? soldCarList = allCarsPr.allSoldCars.data;
-
-            for (var soldCar in soldCarList!) {
-              sortByCreatedAt(
-                  soldCar.cars!, (car) => car.createdAt!, selectedOrder == 0);
-            }
-
-            return Column(
-              children: sold.cars!.map((car) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0.h),
-                  child: CarSalesCard(
-                    soldCar: sold,
-                    onTap: () {
-                      final carId = car.id;
-                      if (mounted) {
-                        if (carId != null) {
-                          print("SSSSSSSSSSS $carId");
-
-                          NavigationRoutes()
-                              .jump(context, Routes.showCarDetails, arguments: {
-                            'carId': carId,
-                            'isOfferScreen': false,
-                            'review': car.averageRating,
-                            'totalBuyer': sold.totalBuyers,
-                            'totalReview': car.reviewCount
-                          });
-                        }
-                      }
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              child: CarSalesCard(
+                soldCar: sold,
+                car: car,
+                onTap: () {
+                  NavigationRoutes().jump(
+                    context,
+                    Routes.showCarDetails,
+                    arguments: {
+                      'carId': car.id,
+                      'isOfferScreen': false,
+                      'review': car.averageRating,
+                      'totalBuyer': sold.totalBuyers,
+                      'totalReview': car.reviewCount,
                     },
-                    car: car,
-                  ),
-                );
-              }).toList(),
+                  );
+                },
+              ),
             );
-          },
-          separatorBuilder: (BuildContext context, int index) {
-            return SizedBox(
-              height: 4.h,
-            );
-          },
-          // itemCount: 1,
-          itemCount: allCarsPr.allSoldCars.data?.length ?? 0,
+          }).toList(),
         );
-      } else if (allCarsPr.allSoldCars.status == ApiStatus.ERROR) {
-        return CustomErrorWidget(
-            isInternetConnection:
-                allCarsPr.allCars.message == OFFLINE_FAILURE_MESSAGE,
-            text: allCarsPr.allSoldCars.message ?? 'Error fetching data',
-            onTap: () => allCarsPr.fetchAllSoldCars());
-      }
-      return SizedBox();
-    });
+      },
+    );
   }
 }

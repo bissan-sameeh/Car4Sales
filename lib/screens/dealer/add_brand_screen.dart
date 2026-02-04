@@ -6,10 +6,10 @@ import 'package:carmarketapp/screens/Widgets/custom_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/helpers/routers/router.dart';
 import '../../core/utils/show_bottom_sheet.dart';
 import '../../core/utils/show_dialog_helper.dart';
-import '../../core/utils/snckbar.dart';
 import '../../models/db/brands_model.dart';
 import '../../providers/Dealer/brands_provider/brands_names_provider.dart';
 import '../Widgets/custom_button.dart';
@@ -24,242 +24,217 @@ class AddBrandScreen extends StatefulWidget {
 }
 
 class _AddBrandScreenState extends State<AddBrandScreen>
-    with MyShowBottomSheet,ShowSnackBar,MyShowDialog,ImageHelper {
-  late TextEditingController searchController;
-  late TextEditingController addBrandController;
-  bool isPressed = false;
-  List<BrandModel> brandsNames = [];
-  List<BrandModel> searchedBrands = [];
+    with MyShowBottomSheet, MyShowDialog, ImageHelper {
+  late final TextEditingController _searchController;
+  late final TextEditingController _addBrandController;
 
-  List<BrandModel> get listToReadBrands =>
-      searchController.text.isNotEmpty ? searchedBrands : brandsNames;
+  List<BrandModel> _searchedBrands = [];
 
+  bool get _isSearching => _searchController.text.isNotEmpty;
 
   @override
-   initState()  {
-    // TODO: implement initState
+  void initState() {
     super.initState();
-    searchController = TextEditingController();
-    addBrandController = TextEditingController();
-
-     init();
-  }
-  init() async {
-
-    await getBrands;
-  }
- Future<void> get getBrands async{
-
-    var list=await BrandsDbController().read();
-    /// print(list);
-    if(mounted){
-    Provider.of<BrandNamesProvider>(context,listen: false).setBrands(list);
-    }
-
- }
-
-  Future<void> addBrand() async {
-    final brandProvider = Provider.of<BrandNamesProvider>(context, listen: false);
-    String newBrandName = addBrandController.text.trim();
-    ///check if exit in provider or database
-    bool? exists = brandProvider.brands.any((brand) =>
-        brand.brandName.toLowerCase() == addBrandController.text.toLowerCase());
-    List<BrandModel>? brandsList=await BrandsDbController().show(addBrandController.text);
-    //check if brand exit previously
-    if (exists|| brandsList!=null ) {
-      if(mounted){
-
-      showWarningDialog(context,text:'Brand Exits!');
-      }
-
-    } else {
-      var result = await BrandsDbController().create(BrandModel(brandName: newBrandName));
-      print(result);
-      if (result) {
-        //add to provider
-        brandProvider.addBrand(newBrandName);
-        ///get index of new brand to make it selected after add it
-        int newIndex = brandProvider.brands.indexWhere((brand) =>
-            brand.brandName.toLowerCase() == newBrandName.toLowerCase());
-
-        if (newIndex != -1) {
-          brandProvider.toggleSelectedBrandManager(newIndex, isSelected: true);
-        }
-
-        addBrandController.clear();
-        if (mounted) {
-          NavigationRoutes().pop(context);
-        }
-      }
-    }
+    _searchController = TextEditingController();
+    _addBrandController = TextEditingController();
+    _loadBrands();
   }
 
- bool get checkBrandTextField=> addBrandController.text.isNotEmpty;
+  Future<void> _loadBrands() async {
+    final brands = await BrandsDbController().read();
+    if (!mounted) return;
+    context.read<BrandNamesProvider>().setBrands(brands);
+  }
+
   @override
   void dispose() {
-    // TODO: implement dispose
+    _searchController.dispose();
+    _addBrandController.dispose();
     super.dispose();
-    searchController.dispose();
-    addBrandController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SafeArea(
-      child: Column(
-        children: [
-           CustomAppBar(text: "Brands",action: InkWell(
-               onTap: () => addNewBrad,
-               child: appSvgImage(path: 'add_car',height: 30,width: 30,color: Theme.of(context).primaryColor)),),
-          CustomSearchBar(
-            searchController: searchController,
-            isBrandScreen: true,
-            hint: 'Brand Name',
-            onChanged: (value) {
-              searchedBrands.clear();
-              for (var brand in brandsNames) {
-                setState(() {
-                  if (brand.brandName
-                      .toUpperCase()
-                      .contains(value.toUpperCase())) {
-                    searchedBrands.add(brand);
-                  }
-                });
-              }
-            },
-          ),
-          SizedBox(
-            height: 12.h,
-          ),
-          Expanded(child: Consumer<BrandNamesProvider>(
-            builder: (BuildContext context, BrandNamesProvider brandProvider,
-                Widget? child) {
-              brandsNames = brandProvider.brands;
-
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0.w),
-                  child:  listToReadBrands.isEmpty? Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      CustomNotFound(image: 'assets/images/search_not_found.json',width: 450,text: "No result Found!",),
-                    ],
-                  ): Wrap(
-                    alignment: WrapAlignment.start,
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children:listToReadBrands.map((brand) {
-
-                      return  CustomChip(
-                          brandName: brand.brandName,
-                          isPressed: brand.isSelected ,
-                          onPressed: () {
-                             setState(() {
-                              int? index = brandProvider.brands.indexOf(brand);
-                              print(index);
-                              brandProvider.setSelectedIndex(index: index);
-                              brandProvider.toggleSelectedBrandManager(index, isSelected: brandProvider.selectedCarType == index);
-
-
-                             });
-                             setState(() {
-
-                             });
-                          });
-                    }).toList(),
-
-                 ) ,
+      body: SafeArea(
+        child: Column(
+          children: [
+            CustomAppBar(
+              text: "Brands",
+              action: InkWell(
+                onTap: _openAddBrandSheet,
+                child: appSvgImage(
+                  path: 'add_car',
+                  height: 30,
+                  width: 30,
+                  color: Theme.of(context).primaryColor,
                 ),
-              );
-            },
-          )),
-          // Spacer(),
-      searchController.text.isNotEmpty && listToReadBrands.isEmpty? SizedBox.shrink() :  Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 20.h),
-            child: CustomButton(
-              onTap: () {
-
-
-
-                setState(() {
-
-                });
-                NavigationRoutes().pop(context);
-              },
-              title: 'Select',
+              ),
             ),
-          )
-        ],
+
+            /// 🔍 Search
+            CustomSearchBar(
+              searchController: _searchController,
+              isBrandScreen: true,
+              hint: 'Brand Name',
+              onChanged: _onSearchChanged,
+            ),
+
+            SizedBox(height: 12.h),
+
+            /// 🏷 Brands List
+            Expanded(
+              child: Consumer<BrandNamesProvider>(
+                builder: (_, provider, __) {
+                  final brands =
+                  _isSearching ? _searchedBrands : provider.brands;
+
+                  if (brands.isEmpty) {
+                    return const CustomNotFound(
+                      image: 'assets/images/search_not_found.json',
+                      width: 450,
+                      text: "No result Found!",
+                    );
+                  }
+
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(brands.length, (index) {
+                        final brand = brands[index];
+                        return CustomChip(
+                          brandName: brand.brandName,
+                          isPressed: brand.isSelected,
+                          onPressed: () =>
+                              _selectBrand(provider, brand),
+                        );
+                      }),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            /// ✅ Select Button
+            if (!_isSearching || _searchedBrands.isNotEmpty)
+              Padding(
+                padding:
+                EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+                child: CustomButton(
+                  title: 'Select',
+                  onTap: () => NavigationRoutes().pop(context),
+                ),
+              ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
-  get addNewBrad {
-    return showSheet(
-        context,
-        height: 400,
-        StatefulBuilder(
-          builder:(context, setState) {
-            return Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 16.0.h, right: 16.h, top: 16),
-                  child: Text(
-                    'Add new brand',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: kWhite,fontSize:18.sp ),
-                  ),
-                ),
-                CustomSearchBar(
-                  searchController: addBrandController,
-                  isBrandScreen: true,
-                  hint: 'Brand Name',
-                  onChanged: (p0) {
-                    setState(() {});
-                  },
-                ),
-                // Spacer(),
+  /// ================= Logic =================
 
-                Padding(
-                    padding: EdgeInsets.only(left: 16.0.w, right: 16.w, top: 24.h,bottom: 16.h),
-                    child: CustomButton(
-                        title: 'Add new brand',
-                        color: checkBrandTextField ==false?kGrayColor:Theme.of(context).primaryColor,
-
-                        onTap: () async {
-
-                           await  _performAdd;
-                        }
-
-
-                    ))
-              ],
-            );
-          }
-
-        ));
+  void _onSearchChanged(String value) {
+    final provider = context.read<BrandNamesProvider>();
+    _searchedBrands = provider.brands
+        .where((b) =>
+        b.brandName.toLowerCase().contains(value.toLowerCase()))
+        .toList();
+    setState(() {});
   }
 
-Future<void> get _performAdd async{
-  if(_checkData){
-    await _add;
-  }else{
-    showWarningDialog(context,text:'Brand Name is Empty!!');
-
+  void _selectBrand(BrandNamesProvider provider, BrandModel brand) {
+    final index = provider.brands.indexOf(brand);
+    provider.toggleSelectedBrandManager(index, isSelected: true);
   }
-}
-bool get _checkData{
-    if(checkBrandTextField){
-     return true;
-    } else{
-      return false;
 
+  /// ================= Add Brand =================
+
+  void _openAddBrandSheet() {
+    showSheet(
+      context,
+      height: 400,
+      _AddBrandBottomSheet(
+        controller: _addBrandController,
+        onAdd: _addBrand,
+      ),
+    );
+  }
+
+  Future<void> _addBrand() async {
+    final name = _addBrandController.text.trim();
+    if (name.isEmpty) {
+      showWarningDialog(context, text: 'Brand Name is Empty!');
+      return;
     }
-}
-Future<void> get _add async {
- await addBrand();
 
+    final provider = context.read<BrandNamesProvider>();
+
+    final existsInProvider = provider.brands
+        .any((b) => b.brandName.toLowerCase() == name.toLowerCase());
+
+    final existsInDb = await BrandsDbController().show(name);
+
+    if (existsInProvider || existsInDb != null) {
+      showWarningDialog(context, text: 'Brand Exists!');
+      return;
+    }
+
+    final success =
+    await BrandsDbController().create(BrandModel(brandName: name));
+
+    if (!success) return;
+
+    provider.addBrand(name);
+
+    final index = provider.brands
+        .indexWhere((b) => b.brandName.toLowerCase() == name.toLowerCase());
+
+    if (index != -1) {
+      provider.toggleSelectedBrandManager(index, isSelected: true);
+    }
+
+    _addBrandController.clear();
+    if (mounted) NavigationRoutes().pop(context);
+  }
 }
 
+/// ================= Bottom Sheet =================
+
+class _AddBrandBottomSheet extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onAdd;
+
+  const _AddBrandBottomSheet({
+    required this.controller,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(height: 16.h),
+        Text(
+          'Add new brand',
+          style: TextStyle(color: kWhite, fontSize: 18.sp),
+        ),
+        SizedBox(height: 16.h),
+        CustomSearchBar(
+          searchController: controller,
+          isBrandScreen: true,
+          hint: 'Brand Name',
+        ),
+        SizedBox(height: 24.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: CustomButton(
+            title: 'Add new brand',
+            onTap: onAdd,
+          ),
+        ),
+      ],
+    );
+  }
 }

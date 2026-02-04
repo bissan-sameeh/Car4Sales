@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:lottie/lottie.dart';
 
 import '../../../core/strings/failure.dart';
 import '../../../providers/Dealer/revenue_prvider/revenue_provider.dart';
@@ -14,107 +13,134 @@ import '../../Widgets/custom_error_widget.dart';
 import '../../Widgets/custom_loading_widget.dart';
 import '../../Widgets/custom_not_found.dart';
 
-class RevenueScreen extends StatelessWidget {
+class RevenueScreen extends StatefulWidget {
   const RevenueScreen({super.key});
+
+  @override
+  State<RevenueScreen> createState() => _RevenueScreenState();
+}
+
+class _RevenueScreenState extends State<RevenueScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    context.read<RevenueProvider>().fetchMonthlyRevenue();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-          child: Column(children: [
-            CustomAppBar(text: 'Revenue'),
-            // SizedBox(height: 90.h),
+      body: SafeArea(
+        child: Consumer<RevenueProvider>(
+          builder: (context, provider, _) {
+            final response = provider.revenueMonthly;
 
-            Consumer<RevenueProvider>(
-                builder: (context, revenueProvider, child) {
-              final revenues = revenueProvider.revenueValues;
-              final months = revenueProvider.monthsList;
-              final double totalRevenue = revenueProvider.totalRevenue;
+            return ListView(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              children: [
+                const CustomAppBar(text: 'Revenue'),
 
-              if (revenueProvider.revenueMonthly.status == ApiStatus.LOADING) {
-                return CustomLoadingWidget(width: 450);
-              } else if (revenueProvider.revenueMonthly.status == ApiStatus.ERROR) {
-                return CustomErrorWidget(
-                    isInternetConnection: revenueProvider.revenueMonthly.message == OFFLINE_FAILURE_MESSAGE,
+                /// 🔄 Loading
+                if (response.status == ApiStatus.LOADING)
+                  const CustomLoadingWidget(width: 450),
 
-                    text:  revenueProvider.revenueMonthly.message ?? 'Error fetching data',onTap:() =>  revenueProvider.fetchMonthlyRevenue());
-              } else if (revenueProvider.revenueMonthly.status == ApiStatus.COMPLETED) {
-                if (revenues.isEmpty) {
-                  return CustomNotFound(
-                   image:'assets/images/linearchart.json',
-                    width: 450,
-                    text: 'Sorry, No Sales Yet !',
-                  );
+                /// ❌ Error
+                if (response.status == ApiStatus.ERROR)
+                  CustomErrorWidget(
+                    isInternetConnection:
+                    response.message == OFFLINE_FAILURE_MESSAGE,
+                    text: response.message ?? 'Failed to load revenue data',
+                    onTap: () => provider.fetchMonthlyRevenue(),
+                  ),
 
-                  print(totalRevenue);
-                  print(months);
-                  print(revenues);
-                  return const CircularProgressIndicator();
-                }
-
-                return Column(
-                  children: [
-                    SizedBox(
-                        width: double.infinity,
-                        child: CustomContainer(
-                          title: "Total Revenue",
-                          preTileIcon: 'revenue',
-                          widget: Text(
-                            '$totalRevenue' ,
-                            style: TextStyle(
-                                fontSize: 14.sp, fontWeight: FontWeight.w400),
-                          ),
-                        )),
-                    SizedBox(
-                      height: 50.h,
-                    ),
-                    MyListTile(
-                      title: "Monthly Revenue",
-                      context: context,
-                    ),
-                    SizedBox(
-                      height: 100.h,
-                    ),
-                    AspectRatio(
-                      aspectRatio: 1.9,
-                      child: _lineChart(revenues, months, context),
-                    ),
-                  ],
-                );
-              }
-
-              return SizedBox();
-            })
-          ]),
+                /// ✅ Completed
+                if (response.status == ApiStatus.COMPLETED)
+                  _buildRevenueContent(provider),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
+  Widget _buildRevenueContent(RevenueProvider provider) {
+    final revenues = provider.revenueValues;
+    final months = provider.monthsList;
+    final totalRevenue = provider.totalRevenue;
+
+    if (revenues.isEmpty || months.isEmpty) {
+      return const CustomNotFound(
+        image: 'assets/images/linearchart.json',
+        width: 450,
+        text: 'No sales data available yet.',
+      );
+    }
+
+    final minRevenue = revenues.reduce((a, b) => a < b ? a : b);
+    final maxRevenue = revenues.reduce((a, b) => a > b ? a : b);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomContainer(
+          title: "Total Revenue",
+          preTileIcon: 'revenue',
+          widget: Text(
+            totalRevenue.toStringAsFixed(2),
+            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+          ),
+        ),
+        SizedBox(height: 32.h),
+
+        MyListTile(
+          title: "Monthly Revenue",
+          context: context,
+        ),
+        SizedBox(height: 24.h),
+
+        AspectRatio(
+          aspectRatio: 1.9,
+          child: _lineChart(
+            revenues,
+            months,
+            minRevenue,
+            maxRevenue,
+            context,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _lineChart(
-      List<double> revenues, List<String> months, BuildContext context) {
+      List<double> revenues,
+      List<String> months,
+      double minRevenue,
+      double maxRevenue,
+      BuildContext context,
+      ) {
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: false),
         borderData: FlBorderData(show: false),
         minX: 0,
-        maxX: months.length - 1,
-        minY: revenues.reduce((a, b) => a < b ? a : b) - 5000,
-        maxY: revenues.reduce((a, b) => a > b ? a : b) + 5000,
+        maxX: (months.length - 1).toDouble(),
+        minY: (minRevenue * 0.9).clamp(0, double.infinity),
+        maxY: maxRevenue * 1.1,
         lineBarsData: [
           LineChartBarData(
-            spots: List.generate(revenues.length,
-                (index) => FlSpot(index.toDouble(), revenues[index])),
+            spots: List.generate(
+              revenues.length,
+                  (i) => FlSpot(i.toDouble(), revenues[i]),
+            ),
             isCurved: true,
             color: Theme.of(context).primaryColor,
             barWidth: 4.w,
-            isStrokeCapRound: true,
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).primaryColor.withOpacity(0.4),
+              color: Theme.of(context).primaryColor.withOpacity(0.3),
             ),
           ),
         ],
@@ -124,44 +150,32 @@ class RevenueScreen extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 70,
-              interval: 5000,
-              getTitlesWidget: (value, meta) {
-                if (revenues.contains(value.toDouble())) {
-                  print(revenues);
-                  return Padding(
-                    padding: EdgeInsets.only(right: 8.0.w),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        '${value.toInt()}',
-                        style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+              interval: maxRevenue / 4,
+              getTitlesWidget: (value, _) => Padding(
+                padding: EdgeInsets.only(right: 8.w),
+                child: Text(
+                  value.toInt().toString(),
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                ),
+              ),
             ),
           ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               interval: 1,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= 0 && value.toInt() < months.length) {
-                  return Transform.rotate(
-                    angle: -0.4,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 2.0.h),
-                      child: Text(
-                        months[value.toInt()],
-                        style: TextStyle(fontSize: 10.sp, color: Colors.grey),
-                      ),
-                    ),
-                  );
+              getTitlesWidget: (value, _) {
+                final index = value.toInt();
+                if (index < 0 || index >= months.length) {
+                  return const SizedBox.shrink();
                 }
-                return const SizedBox.shrink();
+                return Transform.rotate(
+                  angle: -0.4,
+                  child: Text(
+                    months[index],
+                    style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                  ),
+                );
               },
             ),
           ),

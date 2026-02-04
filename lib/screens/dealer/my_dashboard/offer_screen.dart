@@ -6,124 +6,112 @@ import 'package:carmarketapp/screens/Widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/utils/shimmer_helper.dart';
+
 import '../../../core/helpers/api_helpers/api_response.dart';
-import '../../../core/shimmer/shimmer_offer_screen.dart';
 import '../../../core/strings/failure.dart';
 import '../../../providers/Dealer/cars_provider/cars_provider.dart';
 import '../../Widgets/custom_error_widget.dart';
 import '../../Widgets/custom_not_found.dart';
 import '../../Widgets/offer_card_widget.dart';
+import '../../../core/shimmer/shimmer_offer_screen.dart';
 
 class OfferScreen extends StatefulWidget {
-const OfferScreen({super.key});
+  const OfferScreen({super.key});
 
-
-@override
-State<OfferScreen> createState() => _OfferScreenState();
+  @override
+  State<OfferScreen> createState() => _OfferScreenState();
 }
 
-class _OfferScreenState extends State<OfferScreen> with ImageHelper ,StyleHelper,CurrencyHelper,ShimmerHelper {
-  late TextEditingController searchController;
-
-
-  @override
-  void initState() {
-// TODO: implement initState
-    super.initState();
-    searchController = TextEditingController();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) => Provider.of<CarsProvider>(context,listen: false).fetchAllCars());
-  }
-
+class _OfferScreenState extends State<OfferScreen>
+    with ImageHelper, StyleHelper, CurrencyHelper {
+  bool _isFetched = false;
 
   @override
-  void dispose() {
-// TODO: implement dispose
-    super.dispose();
-    searchController.dispose();
-  }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
+    if (!_isFetched) {
+      context.read<CarsProvider>().fetchAllOffers();
+      _isFetched = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              CustomAppBar(text: "Offers"),
+        child: Consumer<CarsProvider>(
+          builder: (context, carsProvider, _) {
+            final response = carsProvider.allCars;
 
-              ///Search Bar
-             //  CustomSearchBar(searchController: searchController),
-             //  SizedBox(height: 24.h,),
+            return ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                const CustomAppBar(text: "Offers"),
 
-              ///My offer
+                /// 🔄 Loading
+                if (response.status == ApiStatus.LOADING)
+                  const ShimmerOfferScreen(),
 
+                /// ❌ Error
+                if (response.status == ApiStatus.ERROR)
+                  CustomErrorWidget(
+                    isInternetConnection:
+                    response.message == OFFLINE_FAILURE_MESSAGE,
+                    text: response.message ?? 'Failed to load offers',
+                    onTap: () => carsProvider.fetchAllOffers(),
+                  ),
 
-              Consumer<CarsProvider>(
-                builder: (BuildContext context, CarsProvider allCarsPr,
-                    Widget? child) {
-                  print('Status: ${allCarsPr.allCars.status}');
-                  if (allCarsPr.allCars.status == ApiStatus.LOADING) {
-                    return ShimmerOfferScreen();
-                  }
-                  else
-                  if (allCarsPr.allCars.status == ApiStatus.COMPLETED) {
-                    if(allCarsPr.allCars.data!.isEmpty){
-                      return CustomNotFound(width: 450,text: 'No Offer Yet , Please Add one!',);
-                    }
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.only(
-                          left: 16.0.w,right: 16.w, top: 0.h,bottom: 16.h),
-
-                      itemBuilder: (context, index) {
-                        return CarDetailsCard(isOfferScreen: true,isImage: true,
-                          onTap: () {
-                            final carId = allCarsPr.allCars.data![index]!.id;
-
-                            if (carId != null) {
-                              print("SSSSSSSSSSS $carId");
-
-                              NavigationRoutes().jump(
-                                context,
-                                Routes.showCarDetails,
-                                arguments: {
-                                  'carId': carId,
-                                  'isOfferScreen': true,
-                                },
-                              );
-
-                            }
-                          },
-                          offerCar: allCarsPr.allCars.data![index],);
-                      },
-                      separatorBuilder: (BuildContext context, int index) {
-                        return SizedBox(height: 16.h,);
-                      },
-                      itemCount: allCarsPr.allCars.data?.length ?? 0,
-                    );
-                  }
-                  else if(allCarsPr.allCars.status == ApiStatus.ERROR){
-                   return CustomErrorWidget(
-                     isInternetConnection: allCarsPr.allCars.message == OFFLINE_FAILURE_MESSAGE,
-
-                       text:  allCarsPr.allCars.message ?? 'Error fetching data',onTap:() => allCarsPr.fetchAllCars());
-
-                }return SizedBox();
-                  //   return CustomNoData(
-                  //     text: allCarsPr.allSoldCars.message, icon: 'no_car_image',);
-                  // }   else{
-                  //   return CustomNoData(
-                  //     text: 'No Offer Founded , Add One!', icon: 'no_car_image',);
-                  // }
-                },
-              )
-            ],
-          ),
+                /// ✅ Completed
+                if (response.status == ApiStatus.COMPLETED)
+                  _buildOffersList(response.data),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildOffersList(List? cars) {
+    if (cars == null || cars.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 40),
+        child: CustomNotFound(
+          width: 450,
+          text: 'No offers available at the moment.',
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      itemCount: cars.length,
+      separatorBuilder: (_, __) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final car = cars[index];
+        if (car == null || car.id == null) {
+          return const SizedBox.shrink();
+        }
+
+        return CarDetailsCard(
+          isOfferScreen: true,
+          isImage: true,
+          offerCar: car,
+          onTap: () {
+            NavigationRoutes().jump(
+              context,
+              Routes.showCarDetails,
+              arguments: {
+                'carId': car.id,
+                'isOfferScreen': true,
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

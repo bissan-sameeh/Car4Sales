@@ -1,46 +1,53 @@
-import 'package:carmarketapp/screens/Customer/home/customer_home_view.dart';
-import 'package:carmarketapp/screens/Widgets/my_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../models/dashboard_model.dart';
 import 'Customer/customer_cart_screens/customer_cart_screen.dart';
 import 'Customer/customer_favorite_screens/customer_favorite_screen.dart';
 import 'Customer/customer_order/order_screen.dart';
-import 'dealer/bnb/seller_profile.dart';
+import 'Customer/home/customer_home_view.dart';
+import 'Widgets/my_bottom_nav_bar.dart';
 
 class CustomerMainScreen extends StatefulWidget {
-  const CustomerMainScreen({super.key, Duration? duration});
+  const CustomerMainScreen({super.key});
 
   @override
-  State<CustomerMainScreen> createState() => _MainScreenState();
+  State<CustomerMainScreen> createState() => _CustomerMainScreenState();
 }
 
-class _MainScreenState extends State<CustomerMainScreen> {
-  int selectedIndex = 0;
+class _CustomerMainScreenState extends State<CustomerMainScreen> {
+  int _selectedIndex = 0;
 
-  List<DashboardModel> get dashboardNavBar => [
-    DashboardModel(
-      icon: Icons.home_filled,
-    ),
+  static final List<Widget> _screens = [
+    const CustomerHomeView(),
+    const FavoriteScreen(),
+    CustomerCartScreen(),
+    OrderScreen(),
+  ];
+
+  static final List<DashboardModel> _navItems = [
+    DashboardModel(icon: Icons.home_filled),
     DashboardModel(icon: Icons.favorite),
     DashboardModel(icon: Icons.shopping_cart),
     DashboardModel(icon: Icons.bookmark_border),
   ];
 
+  void _onTabChanged(int index) {
+    if (index == _selectedIndex) return;
+    setState(() => _selectedIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: [
-          const CustomerHomeView(),
-          const FavoriteScreen(),
-          // const NotificationsView(),
-          CustomerCartScreen(),
-          OrderScreen()
-        ][selectedIndex],
-        bottomNavigationBar: MyBottomNavBar(
-            index: selectedIndex,
-            onTap: (int newPosition) =>
-                setState(() => selectedIndex = newPosition),
-            items: dashboardNavBar));
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: MyBottomNavBar(
+        index: _selectedIndex,
+        items: _navItems,
+        onTap: _onTabChanged,
+      ),
+    );
   }
 }

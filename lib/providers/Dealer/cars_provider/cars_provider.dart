@@ -136,7 +136,7 @@ class CarsProvider extends ChangeNotifier {
   }
 
   // to get all offer cars
-  Future<void> fetchAllCars() async {
+  Future<void> fetchAllOffers() async {
     //   final response = await _carsRepository.getAllCars();
     print("fetchAllCars called");
     _allCars = ApiResponse.loading("Loading All My Offer Cars!");
@@ -233,7 +233,7 @@ class CarsProvider extends ChangeNotifier {
       isLoading=false;
       notifyListeners();
 
-      await fetchAllCars();
+      await fetchAllOffers();
       notifyListeners();
     } catch (error) {
       if (error is Failure) {
@@ -292,7 +292,7 @@ class CarsProvider extends ChangeNotifier {
 
         print('ssskkkkkkkkkkkkkkkkkkkkk');
         _deleteCar = ApiResponse.completed(response);
-         await fetchAllCars();
+         await fetchAllOffers();
 
 
         notifyListeners();
