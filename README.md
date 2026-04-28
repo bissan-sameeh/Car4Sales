@@ -1,7 +1,7 @@
 <!-- 🔝 HERO IMAGE -->
 
 <p align="center">
-  <img src="assets/images/mockup.png" alt="Car Marketplace App" width="800"/>
+  <img src="resized_image.png" alt="Car Marketplace App" width="800"/>
 </p>
 
 <h1 align="center">🚗 Car Marketplace App</h1>
@@ -11,7 +11,9 @@ A full-featured car marketplace built with Flutter — designed for both buyers 
 </p>
 
 <p align="center">
-  <a href="PUT_YOUR_LINKEDIN_POST_HERE">🔗 View Project Story</a>
+  <a href="https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF">
+    🔗 View Full Project Story on LinkedIn
+  </a>
 </p>
 
 ---
@@ -25,15 +27,7 @@ It reflects my ability to:
 * Think like an engineer
 * Analyze systems deeply
 * Make thoughtful technical decisions
-* Build scalable applications using structured methodologies like Agile
-
----
-
-## 📱 App Preview
-
-<p align="center">
-  <img src="assets/images/mockup.png" width="700"/>
-</p>
+* Build scalable applications using Agile methodology
 
 ---
 
@@ -60,46 +54,26 @@ It reflects my ability to:
 
 ## ⚙️ Tech Stack
 
-| Category     | Technology           |
-| ------------ | -------------------- |
-| Framework    | Flutter              |
-| Architecture | MVC                  |
-| State Mgmt   | Provider             |
-| Backend      | REST APIs            |
-| Database     | SQLite               |
-| Charts       | FL Chart             |
-| Payments     | Stripe               |
-| Auth         | Firebase/Auth System |
-
----
-
-## 📊 Screenshots
-
-<p align="center">
-  <img src="assets/images/home.png" width="250"/>
-  <img src="assets/images/details.png" width="250"/>
-  <img src="assets/images/cart.png" width="250"/>
-</p>
-
----
-
-## 💡 Challenges & Learning
-
-* Designing a full system with two roles (buyer & seller)
-* Managing state efficiently across complex flows
-* Handling API errors and edge cases
-* Improving UI/UX despite it not being my main specialization
+| Category     | Technology            |
+| ------------ | --------------------- |
+| Framework    | Flutter               |
+| Architecture | MVC                   |
+| State Mgmt   | Provider              |
+| Backend      | REST APIs             |
+| Database     | SQLite                |
+| Charts       | FL Chart              |
+| Payments     | Stripe                |
+| Auth         | Authentication System |
 
 ---
 
 ## 🔗 Project Story
 
 I shared the full journey behind this project here:
-👉 PUT_YOUR_LINKEDIN_POST_LINK_HERE
+👉 https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF
 
 ---
 
 ## ❤️ Final Note
 
-This project is more than just an app—it's a reflection of persistence, growth, and building despite challenges.
-
+This project is more than just code—it's a reflection of persistence, growth, and building despite challenges.
