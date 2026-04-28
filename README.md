@@ -1,21 +1,50 @@
-# 🚗 Car Marketplace App (Flutter)
+<!-- 🔝 HERO IMAGE -->
 
-A full-featured car marketplace application built with Flutter, designed with a complete system for both buyers and sellers.
+<p align="center">
+  <img src="assets/images/mockup.png" alt="Car Marketplace App" width="800"/>
+</p>
 
-## 📌 About the Project
+<h1 align="center">🚗 Car Marketplace App</h1>
 
-This project was built from scratch—starting from idea analysis, system design, and full development.
+<p align="center">
+A full-featured car marketplace built with Flutter — designed for both buyers and sellers.
+</p>
 
-It reflects my journey of learning how to think like an engineer, making decisions carefully, and following a structured methodology (Agile) to build a scalable system.
+<p align="center">
+  <a href="PUT_YOUR_LINKEDIN_POST_HERE">🔗 View Project Story</a>
+</p>
 
-## ✨ Features
+---
+
+## ✨ Overview
+
+This project represents a complete journey—from idea analysis and system design to full implementation.
+
+It reflects my ability to:
+
+* Think like an engineer
+* Analyze systems deeply
+* Make thoughtful technical decisions
+* Build scalable applications using structured methodologies like Agile
+
+---
+
+## 📱 App Preview
+
+<p align="center">
+  <img src="assets/images/mockup.png" width="700"/>
+</p>
+
+---
+
+## 🚀 Features
 
 ### 👤 Buyer Side
 
-* Browse cars and view details
-* Add/remove favorites (local storage using SharedPreferences)
-* Cart system (add, remove, update)
-* Secure payments using Stripe
+* Browse cars & view details
+* Favorites (local storage with SharedPreferences)
+* Cart system (add / remove / update)
+* Stripe payment integration
 * Ratings & reviews
 * Order history
 
@@ -23,29 +52,54 @@ It reflects my journey of learning how to think like an engineer, making decisio
 
 * Add / edit / delete cars
 * Sales analytics (sold vs unsold)
-* Top brands visualization (Pie Chart)
+* Pie chart (top brands)
 * Top-selling cars
-* Revenue analysis (Line Chart)
+* Revenue line chart
+
+---
 
 ## ⚙️ Tech Stack
 
-* Flutter
-* MVC Architecture
-* Provider (State Management)
-* REST APIs + Error Handling
-* SQLite (local database)
-* FL Chart (data visualization)
-* Authentication System
+| Category     | Technology           |
+| ------------ | -------------------- |
+| Framework    | Flutter              |
+| Architecture | MVC                  |
+| State Mgmt   | Provider             |
+| Backend      | REST APIs            |
+| Database     | SQLite               |
+| Charts       | FL Chart             |
+| Payments     | Stripe               |
+| Auth         | Firebase/Auth System |
 
-## 💡 Note
+---
 
-UI/UX is an area I’m continuously improving, and this project reflects that progress step by step.
+## 📊 Screenshots
 
-## 🔗 LinkedIn Post
+<p align="center">
+  <img src="assets/images/home.png" width="250"/>
+  <img src="assets/images/details.png" width="250"/>
+  <img src="assets/images/cart.png" width="250"/>
+</p>
 
-I shared the full story behind this project here:
-👉 (https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)](https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)
+---
 
-## ❤️ Final Thoughts
+## 💡 Challenges & Learning
 
-This project is more than just code—it's a journey of persistence, learning, and growth despite challenges.
+* Designing a full system with two roles (buyer & seller)
+* Managing state efficiently across complex flows
+* Handling API errors and edge cases
+* Improving UI/UX despite it not being my main specialization
+
+---
+
+## 🔗 Project Story
+
+I shared the full journey behind this project here:
+👉 PUT_YOUR_LINKEDIN_POST_LINK_HERE
+
+---
+
+## ❤️ Final Note
+
+This project is more than just an app—it's a reflection of persistence, growth, and building despite challenges.
+
