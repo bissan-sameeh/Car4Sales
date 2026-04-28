@@ -44,7 +44,7 @@ UI/UX is an area I’m continuously improving, and this project reflects that pr
 ## 🔗 LinkedIn Post
 
 I shared the full story behind this project here:
-👉 [Add your LinkedIn post link here](https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)](https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)
+👉 (https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)](https://www.linkedin.com/posts/bissan-qwaider-691181233_flutter-dart-stripe-activity-7454882562474143744-zQNF?utm_source=share&utm_medium=member_desktop&rcm=ACoAADo5To0BegAUq3Or1UYzTkZ5FzvFUL9p0LU)
 
 ## ❤️ Final Thoughts
 
